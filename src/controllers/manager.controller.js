@@ -143,3 +143,74 @@ export const getDataCollaborators = async (req, res) => {
   });
   return res.json(select[0]);
 }
+
+// Obtener colaboradores
+export const getDataProjectDetails = async (req, res) => {
+  const { project_id } = req.params;
+  const conn = await getConnection();
+  const db = variablesDB.data_base;
+  const select = await conn.query(`
+    SELECT t.id, t.project_id, t.title, t.description, u.name as assigned_to, t.status 
+    FROM ${db}.tasks t
+    INNER JOIN ${db}.users u
+    ON t.assigned_to = u.id
+    WHERE project_id = ?`, [project_id]);
+  if (!select) return res.json({
+    status: 500,
+    message: 'Error obteniendo los datos'
+  });
+  return res.json(select[0]);
+}
+
+
+// Guardar tarea
+export const saveTaskIdea = async (req, res) => {
+  const { project_id, title, description, assigned_to, status } = req.body;
+
+  if (!project_id || !title || !description || !assigned_to || !status) {
+    return res.json(responseQueries.error({ message: "Datos incompletos" }));
+  }
+
+  const conn = await getConnection();
+  const db = variablesDB.data_base;
+
+  const insert = await conn.query(
+    `INSERT INTO ${db}.tasks (project_id, title, description, assigned_to, status) VALUES (?, ?, ?, ?, ?)`,
+    [project_id, title, description, assigned_to, status]
+  );
+
+  if (!insert) return res.json(responseQueries.error({ message: "Error al crear la tarea" }));
+
+  return res.json(responseQueries.success({ message: "Tarea creada con éxito" }));
+};
+
+
+// Activar los proyectos
+
+export const updateTaskStatus = async (req, res) => {
+  // const { id } = req.params;
+  // const data = JSON.parse(req.body.data);
+  const { id, status } = req.body;
+
+  if (!id || !status) {
+    return res.json(responseQueries.error({ message: "Datos incompletos" }));
+  }
+
+  try {
+    const conn = await getConnection();
+    const db = variablesDB.data_base;
+
+    const update = await conn.query(
+      `UPDATE ${db}.tasks SET status = ? WHERE id = ?`,
+      [status, id]
+    );
+
+    if (update.affectedRows === 0) {
+      return res.json(responseQueries.error({ message: "No se encontró la tarea" }));
+    }
+
+    return res.json(responseQueries.success({ message: "Tarea movida con éxito" }));
+  } catch (error) {
+    return res.json(responseQueries.error({ message: "Error al mover la tarea", error }));
+  }
+};
