@@ -185,7 +185,7 @@ export const saveTaskIdea = async (req, res) => {
 };
 
 
-// Cambiar el estado de una tarea
+// Activar los proyectos
 
 export const updateTaskStatus = async (req, res) => {
   // const { id } = req.params;
